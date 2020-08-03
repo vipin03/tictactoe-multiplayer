@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Tic tAc toe</title>
+	<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/font/all.css">
+  <link rel="stylesheet" href="css/switch.css">
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/font/all.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript">
+	$(function () {
+    var socket = io();
+    /****************************Ploting logic*****************************/
+    $('.box').on('click',function(e){
+      e.preventDefault(); // prevents page reloading
+      let curretCode=$('#currentCode').val();
+      let id='#'+$(this).attr('id');
+      let data= {'id':id,'val':$(id).html(),'code':curretCode}
+      socket.emit('plot', data);
+      // if(data.val=='O' && $('#joiner').val()=='yes'){
+      // 	$('#user2Turn').show();
+      // 	$('#user1Turn').hide();
+      // 	console.log('creater should hide here')
+      // }
+      // else if(data.val=='X' && $('#creator').val()=='yes'){
+      // 	console.log('joiner should hide here')
+      // 	$('#user2Turn').hide();
+      // 	$('#user1Turn').show();
+      // }
+      return false;
+    });
+
+    socket.on('plot', function(msg){
+    	console.log(msg);
+      $(msg.id).html(msg.val);
+      console.log('plotingggg');
+      if(msg.val=='X'){
+      	console.log('p1  show ')
+      	$('#user2Turn').hide();
+      	$('#user1Turn').show();
+      	if($('#creator').val()=='yes'){
+      		$('.table').click(true);
+      	}else{
+      		$('.table').click(false);
+      	}
+      }else{
+      	console.log('p2  show ')
+      	$('#user2Turn').show();
+      	$('#user1Turn').hide();
+      	if($('#joiner').val()=='yes'){
+      		$('.table').click(true);
+      	}else{
+      		$('.table').click(false);
+      	}
+      }
+
+      // if(msg.val=='X' && $('#creator').val()=='yes'){
+      // 	console.log('if insede X amd creator yes')
+      // 	$('#user1Turn').show();
+      // 	$('#user2Turn').hide();
+      // }
+      // else{
+      // 	console.log('else insede X amd creator yes')
+      // 	$('#user2Turn').show();
+      // 	$('#user1Turn').hide();
+      // }
+    });
+    /****************************game creation block*****************************/
+    $('#createGame').on('click',function(){
+    	$('#creator').val('yes');
+    	$('#joiner').val('no');
+		$('#user1').html($('#user1Name').val());
+		let createData= {'username':$('#user1Name').val()}
+  		socket.emit('create', createData);
+			// add below code for 'waiting toplayer 2 join'
+	});
+
+	socket.on('create', function(createData){
+		if($('#creator').val()=='yes'){
+			$('#currentCode').val(createData.code);
+			$('#displayCodeDiv').show();
+			$('#displayCode').html('<label>Code:</label> <span>'+createData.code+'. waiting for player 2....</span>');
+	    	console.log(createData);
+		}
+		
+    	// show code to user1
+    });
+	/**************************** joining logic *****************************/
+	$('#joinGame').on('click',function(){
+		$('#user2').html($('#user2Name').val());
+		$('#creator').val('no');
+    	$('#joiner').val('yes');
+		let joinData= {'username':$('#user2Name').val(),'code':$('#joinCode').val()}
+  		socket.emit('join', joinData);
+	});
+
+	// socket.on('join', function(createData){
+ //    	console.log(createData);
+ //    });
+
+    socket.on('startGame', function(createData){
+    	if(createData.started){
+    		$('#user1').html(createData.username1);
+			$('#user2').html(createData.username2);
+			$('#getUser').modal('hide');
+			$('#currentCode').val(createData.code);
+			$('#user2Turn').hide();
+      		$('#user1Turn').show();
+      		if($('#creator').val()=='yes'){
+	      		$('.table').click(true);
+	      	}else{
+	      		$('.table').click(false);
+	      	}
+    		console.log('game started in room',createData.code);
+    		// if($('#creator').val()=='yes'){
+
+    		// }else{
+
+    		// }
+    	}
+    });
+
+    socket.on('endGame', function(endData){
+		$('#declareWinner').html(endData.username)
+		$('#resultWinner').modal('show');
+
+    });
+
+    $('.closeResultModal').on('click',function(){
+    	$('.fa-sync-alt').trigger('click');
+    	$('#user1Name').val('')
+    	$('#user2Name').val('')
+    	$('#currentCode').val('')
+    	$('#joinCode').val('')
+    	$('#displayCode').html('');
+    	$('.turn').hide();
+    	$('#creator').val('no');
+    	$('#joiner').val('no');
+    });
+  });
+	function result(result,username){
+		var socket = io();
+    	let curretCode=$('#currentCode').val();
+    	let resultData= {'result':result,'username':username,'code':curretCode}
+    	console.log('debug',resultData);
+    	socket.emit('result', resultData);
+    }
+</script>
+  <style type="text/css">
+
+  .table>tbody>tr>td{
+  		 padding: 36px ;
+  		
+  	}
+  	.tdDark{
+  		 color:white;
+  	}
+  	.bodyDark{
+  		background-color: #2d2b2b;
+  	}
+  	.informationDark{
+  		background-color: #2d2b2b;
+  		color:white;
+  	}
+  	.pheadDark{
+  		    background-color: #fff;
+  	}
+
+  	.tdLight{
+  		 color:black;
+  	}
+  	.bodyLight{
+  		background-color: #F5F5F5;
+  	}
+  	.informationLight{
+  		background-color: #fff;
+  		color:black;
+  	}
+  	.pheadLight{
+  		    border-color: #3d8290;
+    		background-color: #a0d7e2;
+  	}
+  	.panel-body{
+  		    margin-right: -1px;
+    margin-left: -2px;
+  	}
+  	.margin20px{
+  		margin-top: 20px;
+  	}
+  	.marginBottom20px{
+  		margin-bottom: 20px;
+  	}
+  </style>
+</head>
+<body>
+	<div class="container " style="margin-top: 5px;">
+
+</label>
+		<div class="panel">
+	      <div class="panel-heading"><b>TicTacToe</b> 
+	      	<div class="pull-right"><small>Dark Theme</small>
+		      	<label class="switch">
+	  				<input type="checkbox" id="theme" name="theme">
+	  						<span class="slider round"></span>
+	  			</label> 
+	  		</div>
+  		</div>
+	      <div class="panel-body" >
+	      	<span class="pull-left"><i class="" onclick="reset()">	</i></span>
+	      	<span class="pull-right"><i class="fas fa-sync-alt" onclick="reset()">	</i></span>
+	      	<div class="row">
+	      	<div class="p1-class col-lg-6 col-md-6 col-xs-6 col-sm-6 margin20px" >
+			Player 1: <i id="user1">********</i> <span id="user1Turn" class="green ">Turn</span>
+			<!-- <br> Point : <i class="padding-left" id="p1"></i> -->
+			<input type="hidden" id="p1val" value="">
+			</div>
+			<div class=" p2-class col-lg-6 col-md-6 col-xs-6 col-sm-6">
+			Player 2: <i id="user2">********</i> <span id="user2Turn" class="green">Turn</span>
+			<!-- <br>Point : <i id="p2"></i> -->
+			<input type="hidden" id="p2val" value="">
+			<input type="hidden" id="creator" value="no">
+			<input type="hidden" id="joiner" value="no">
+			<input type="hidden" id="currentCode" value="">
+			</div>
+		</div>
+
+	      </div>
+	    </div>
+		<table class="table table-border col-lg-3 mx-auto" border="1" style="margin-bottom: 0px;    ">
+			<tr>
+				<td class="box col-md-2" id="btn1" onclick="insertVal(1)" ></td>
+				<td class="box" id="btn2"  onclick="insertVal(2)"></td>
+				<td class="box" id="btn3"  onclick="insertVal(3)"></td>
+			</tr>
+			<tr>
+				<td class="box" id="btn4"  onclick="insertVal(4)"></td>
+				<td class="box" id="btn5"  onclick="insertVal(5)"></td>
+				<td class="box" id="btn6"  onclick="insertVal(6)"></td>
+			</tr>
+			<tr>
+				<td class="box" id="btn7"  onclick="insertVal(7)"></td>
+				<td class="box" id="btn8"  onclick="insertVal(8)"></td>
+				<td class="box" id="btn9"  onclick="insertVal(9)"></td>
+			</tr>
+		</table>
+		<input type="hidden" name="currentUser" id="currentUser" value="">
+		<div class="modal fade" id="getUser" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content container">
+					<div class="modal-header">
+        				<!-- <button type="button" class="close" data-dismiss="modal">&times;</button> -->
+        				<h4 class="modal-title">Enter Player Details</h4>
+      				</div>
+					  <p class="text-center">Player 1 : <b>'0'</b> & Player 2 : <b>'X'</b>.</p>
+					  <form class="marginBottom20px">
+					  	<ul class="nav nav-tabs">
+						    <li class="active"><a data-toggle="tab" href="#home">Create game</a></li>
+						    <li><a data-toggle="tab" href="#menu1">Join Game</a></li>
+						  </ul>
+
+					  <div class="tab-content">
+					    <div id="home" class="tab-pane fade in active p-5	">
+					      	<input type="text" class="form-control" name="user1" id="user1Name" placeholder="Username"><br>
+					      	<div class="conatiner" id="displayCodeDiv">
+					      		<p class="text-center" id="displayCode"></p>
+					      	</div>
+							<a class="btn btn-block btn-primary" id="createGame"> Create<i class="fas fa-skating"></i> </a>
+					    </div>
+					    <div id="menu1" class="tab-pane fade">
+					      	<input type="text" class="form-control" name="user2" id="user2Name" placeholder="Username"><br>
+							<input type="text" class="form-control" name="joinCode" id="joinCode" placeholder="Enter code here"><br>
+							<a type="button" class="btn btn-block btn-primary" id="joinGame">Join <i class="fas fa-skating"></i> </a>
+					    </div>
+					  </div>	
+					  	
+					  	
+					  </form>
+		      	</div>
+			</div>
+		</div>
+
+		<!-- dclare winner modal -->
+		<div class="modal fade" id="resultWinner" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content container">
+					<div class="modal-header">
+        				<button type="button" class="close closeResultModal" data-dismiss="modal">&times;</button>
+        				<center><h4 class="modal-title">We got a winner</h4></center>
+        				<br>
+        				<div>
+        					<center><b> <span id="declareWinner"></span></b>
+        					</center>
+        				</div>
+      				</div>
+      			</div>
+      		</div>
+      	</div>
+	</div>
+</body>
+<script type="text/javascript">
+	// $(function () {
+	//     var socket = io();
+	//     socket.on('plot', function(msg){
+	//     	console.log(msg);
+	//       $(msg.id).html(msg.val);
+	//     });
+	// });
+	$(document).ready(function(){
+		$('.box').html('');
+		$('#currentUser').val(1);
+		$('#p1val').html(0);
+		$('#p2val').html(0);
+		$('#p1').html(0);
+		$('#p2').html(0);
+		$('#displayCodeDiv').hide();
+		$('#displayCode').html('');
+		$('#getUser').modal({backdrop: 'static', keyboard: false});
+		// $('#getUser').modal({backdrop: 'static', keyboard: false}) 
+		$('#user1').html('');
+		$('#user2').html('');
+		$('.turn').hide();
+		$('#user2Turn').hide();
+      	$('#user1Turn').hide();
+		$('#play').on('click',function(){
+			// $('#user1').html($('#user1Name').val());
+			// $('#user2').html($('#user2Name').val());
+			// $('#getUser').modal('hide');
+		});
+		
+		$('input[type="checkbox"]').click(function(){
+	        if($(this).prop("checked") == true){
+	            dark();
+	        }
+	        else if($(this).prop("checked") == false){
+	            light();
+	        }
+	    });
+		light()
+	});
+	function insertVal(no)
+	{
+		var id='#btn'+no;
+		var currentUser=$('#currentUser').val();
+		if($(id).html()=='')
+		{
+			// if(currentUser==1)
+			// {
+			// 	$('#currentUser').val(2);
+			// 	var c_val ='O';
+			// 	$(id).html('O');
+			// 	checkifwon(1,id);
+			// }
+			// else if(currentUser==2)
+			// {
+			// 	$('#currentUser').val(1);
+			// 	var c_val ='X';
+			// 	$(id).html('X');
+			// 	checkifwon(2,id);
+			// }
+			if($('#creator').val()=='yes'){
+				$('#currentUser').val(2);
+				var c_val ='O';
+				$(id).html('O');
+				checkifwon(1,id);
+    		}else{
+    			$('#currentUser').val(1);
+				var c_val ='X';
+				$(id).html('X');
+				checkifwon(2,id);
+    		}
+			// var data= {'id':id,'val':c_val}
+	  //     	socket.emit('plot', data);
+		}
+		else
+		{
+			alert('Sorry that place is occupied ');
+		}
+	}
+	function checkifwon(user,id)
+	{
+		var value = $(id).html();
+		/* cheking for horizontal 3 rows*/
+		if($('#btn1').html()!='' && $('#btn1').html()==$('#btn2').html() && $('#btn2').html()==$('#btn3').html() )
+		{
+			if(user==1)
+			{
+				
+				var p1= $('#p1val').val();
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+
+		if($('#btn4').html()!='' && $('#btn4').html()==$('#btn5').html() && $('#btn5').html()==$('#btn6').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+
+		if($('#btn7').html()!='' && $('#btn7').html()==$('#btn8').html() && $('#btn8').html()==$('#btn9').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+		/* cheking for vertical 3 rows*/
+		if($('#btn1').html()!='' && $('#btn1').html()==$('#btn4').html() && $('#btn4').html()==$('#btn7').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				console.log('winnnerr');
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+
+		if($('#btn2').html()!='' && $('#btn2').html()==$('#btn5').html() && $('#btn5').html()==$('#btn8').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+
+		if($('#btn3').html()!='' && $('#btn3').html()==$('#btn6').html() && $('#btn6').html()==$('#btn9').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+		/* cheking for 2 diagonal*/
+		if($('#btn1').html()!='' && $('#btn1').html()==$('#btn5').html() && $('#btn5').html()==$('#btn9').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+		}
+
+		if($('#btn3').html()!='' && $('#btn3').html()==$('#btn5').html() && $('#btn5').html()==$('#btn7').html() )
+		{
+			if(user==1)
+			{
+				
+				$('#p1val').val(+$('#p1val').val()+ +1);
+				$('#p1').html($('#p1val').val());
+				result('win',$('#user1').html());
+			}
+			else
+			{
+				
+				$('#p2val').val(+$('#p2val').val()+ +1);
+				$('#p2').html($('#p2val').val());
+				result('win',$('#user2').html());
+			}
+			$('.box').html('');
+			$('#currentUser').val(1);
+
+		}
+		/* check for draw*/
+		var empty=9;
+		$('.box').each(function(i, obj) {
+    		if($(this).html()!='')
+    		{
+    			empty=empty-1;
+    		}
+		});
+		if(empty==0)
+		{
+			
+			$('.box').html('');
+			$('#currentUser').val(1);
+			alert('Game Drawn ');
+		}
+	}
+	function reset()
+	{
+		$('.box').html('');
+		$('#currentUser').val(1);
+		$('#p1val').html(0);
+		$('#p2val').html(0);
+		$('#p1').html(0);
+		$('#p2').html(0);
+		$('#user1').html('');
+		$('#user2').html('');
+		$('#getUser').modal('show');
+	}
+	function dark()
+	{
+		$('body').addClass('bodyDark');
+		$('body').removeClass('bodyLight');
+
+		$('.panel-body').addClass('informationDark');
+		$('.panel-body').removeClass('informationLight');
+
+		$('table').addClass('tdDark');
+		$('table').removeClass('tdLight');
+
+		$('.panel-heading').addClass('pheadDark');
+		$('.panel-heading').removeClass('pheadLight');
+	}
+	function light()
+	{
+		$('body').addClass('bodyLight');
+		$('body').removeClass('bodyDark');
+
+		$('.panel-body').addClass('informationLight');
+		$('.panel-body').removeClass('informationDark');
+
+		$('table').addClass('tdLight');
+		$('table').removeClass('tdDark');
+
+		$('.panel-heading').addClass('pheadLight');
+		$('.panel-heading').removeClass('pheadDark');
+	}
+</script>
+</html>
