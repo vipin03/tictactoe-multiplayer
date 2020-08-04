@@ -11,7 +11,7 @@
   <script src="js/jquery.min.js"></script>
   <script src="js/bootstrap.min.js"></script>
   <script src="js/font/all.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://vipin03-tictactoe-multiplayer.glitch.me/socket.io/socket.io.js"></script>
   <script type="text/javascript">
 	$(function () {
     var socket = io();
@@ -44,18 +44,22 @@
       	$('#user2Turn').hide();
       	$('#user1Turn').show();
       	if($('#creator').val()=='yes'){
-      		$('.table').click(true);
+      		// $('.table').click(true);
+          $('.table').css("pointer-events", "auto");
       	}else{
-      		$('.table').click(false);
+      		// $('.table').click(false);
+          $('.table').css("pointer-events", "none");
       	}
       }else{
       	console.log('p2  show ')
       	$('#user2Turn').show();
       	$('#user1Turn').hide();
       	if($('#joiner').val()=='yes'){
-      		$('.table').click(true);
+      		// $('.table').click(true);
+          $('.table').css("pointer-events", "auto");
       	}else{
-      		$('.table').click(false);
+      		// $('.table').click(false);
+          $('.table').css("pointer-events", "none");
       	}
       }
 
@@ -72,11 +76,17 @@
     });
     /****************************game creation block*****************************/
     $('#createGame').on('click',function(){
-    	$('#creator').val('yes');
-    	$('#joiner').val('no');
-		$('#user1').html($('#user1Name').val());
-		let createData= {'username':$('#user1Name').val()}
-  		socket.emit('create', createData);
+      if($('#user1Name').val()!=''){
+        $('#creator').val('yes');
+        $('#joiner').val('no');
+        $('#user1').html($('#user1Name').val());
+
+        let createData= {'username':$('#user1Name').val()}
+        socket.emit('create', createData);
+      }else{
+        showErrors('please enter username');
+      }
+    	
 			// add below code for 'waiting toplayer 2 join'
 	});
 
@@ -92,11 +102,15 @@
     });
 	/**************************** joining logic *****************************/
 	$('#joinGame').on('click',function(){
-		$('#user2').html($('#user2Name').val());
-		$('#creator').val('no');
-    	$('#joiner').val('yes');
-		let joinData= {'username':$('#user2Name').val(),'code':$('#joinCode').val()}
-  		socket.emit('join', joinData);
+    if($('#user2Name').val()!='' && $('#joinCode').val()!='' ){
+      $('#user2').html($('#user2Name').val());
+      $('#creator').val('no');
+        $('#joiner').val('yes');
+      let joinData= {'username':$('#user2Name').val(),'code':$('#joinCode').val(),'tempCode':$('#user2Name').val()+'-'+$('#joinCode').val()}
+        socket.emit('join', joinData);
+    }else{
+      showErrors('username and code is necessary');
+    }
 	});
 
 	// socket.on('join', function(createData){
@@ -112,9 +126,11 @@
 			$('#user2Turn').hide();
       		$('#user1Turn').show();
       		if($('#creator').val()=='yes'){
-	      		$('.table').click(true);
+	      		// $('.table').click(true);
+            $('.table').css("pointer-events", "auto");
 	      	}else{
-	      		$('.table').click(false);
+	      		// $('.table').click(false);
+            $('.table').css("pointer-events", "none");
 	      	}
     		console.log('game started in room',createData.code);
     		// if($('#creator').val()=='yes'){
@@ -126,9 +142,26 @@
     });
 
     socket.on('endGame', function(endData){
-		$('#declareWinner').html(endData.username)
-		$('#resultWinner').modal('show');
+      if(endData.result=='win'){
+        $('#declareWinner').html(endData.username)
+        $('#declareTitle').html('We got a winner')
+        
+      }else{
+        $('#declareWinner').html('')
+        $('#declareTitle').html('Game drawn')
+      }
+		    
+		    $('#resultWinner').modal('show');
 
+    });
+    
+    // errors
+    socket.on('errors', function(errData){
+        // $('#getUser').modal('hide');
+        // $('#displayErrors').html(errData)
+        // $('#errorModal').modal('show');
+      showErrors(errData);
+      		
     });
 
     $('.closeResultModal').on('click',function(){
@@ -143,6 +176,11 @@
     	$('#joiner').val('no');
     });
   });
+    function showErrors(errData){
+      $('#getUser').modal('hide');
+        $('#displayErrors').html(errData)
+        $('#errorModal').modal('show');
+    }
 	function result(result,username){
 		var socket = io();
     	let curretCode=$('#currentCode').val();
@@ -265,15 +303,15 @@
 
 					  <div class="tab-content">
 					    <div id="home" class="tab-pane fade in active p-5	">
-					      	<input type="text" class="form-control" name="user1" id="user1Name" placeholder="Username"><br>
+					      	<input type="text" class="form-control" name="user1" id="user1Name" placeholder="Username" required><br>
 					      	<div class="conatiner" id="displayCodeDiv">
 					      		<p class="text-center" id="displayCode"></p>
 					      	</div>
 							<a class="btn btn-block btn-primary" id="createGame"> Create<i class="fas fa-skating"></i> </a>
 					    </div>
 					    <div id="menu1" class="tab-pane fade">
-					      	<input type="text" class="form-control" name="user2" id="user2Name" placeholder="Username"><br>
-							<input type="text" class="form-control" name="joinCode" id="joinCode" placeholder="Enter code here"><br>
+					      	<input type="text" class="form-control" name="user2" id="user2Name" placeholder="Username" required><br>
+							<input type="text" class="form-control" name="joinCode" id="joinCode" placeholder="Enter code here" required><br>
 							<a type="button" class="btn btn-block btn-primary" id="joinGame">Join <i class="fas fa-skating"></i> </a>
 					    </div>
 					  </div>	
@@ -290,7 +328,7 @@
 				<div class="modal-content container">
 					<div class="modal-header">
         				<button type="button" class="close closeResultModal" data-dismiss="modal">&times;</button>
-        				<center><h4 class="modal-title">We got a winner</h4></center>
+        				<center><h4 class="modal-title" id="declareTitle" ></h4></center>
         				<br>
         				<div>
         					<center><b> <span id="declareWinner"></span></b>
@@ -300,6 +338,17 @@
       			</div>
       		</div>
       	</div>
+    <!-- dclare error modal -->
+      <div class="modal fade" id="errorModal" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content container">
+            <div class="modal-header">
+                  <button type="button" class="close closeResultModal" data-dismiss="modal">&times;</button>
+                  <center><h4 class="modal-title" id="displayErrors" ></h4></center>
+                </div>
+              </div>
+            </div>
+          </div>
 	</div>
 </body>
 <script type="text/javascript">
@@ -560,7 +609,8 @@
 			
 			$('.box').html('');
 			$('#currentUser').val(1);
-			alert('Game Drawn ');
+			// alert('Game Drawn ');
+      result('draw','');
 		}
 	}
 	function reset()
